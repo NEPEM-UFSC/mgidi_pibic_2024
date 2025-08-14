@@ -16,7 +16,6 @@ knitr::opts_chunk$set(cache = FALSE,
 
 ```{r}
 library(rio)
-
 library(tidyverse)
 library(metan)
 library(ggthemes)
@@ -25,7 +24,7 @@ library(lme4)
 library(lmerTest)
 library(patchwork)
 df <-  import("data/dados_plantas.xlsx")
-
+dfquali <- import("qualidade_blocos.xlsx")
 ```
 
 
@@ -50,10 +49,27 @@ ggplot(df, aes(MG, GEN, fill = TIPO)) +
 ```
 
 
+
+```{r}
+#raiz
+x <- df$AP
+m <- mean(c(x))
+n <- length(x)
+
+d <- x - m
+d^2
+sum(d^2)/(n-1)
+
+#nutella
+var(x)
+
+
+```
+
+
 # Variância entre e dentro
 ## Modelo
 ```{r}
-
 vcomp <- function(data,
                   traits, 
                   gen_col = "GEN",
@@ -95,7 +111,8 @@ vcomp <- function(data,
   return(df_final)
 }
 
-variaveis <- c("AP", "AC", "CP", "MC", "MG", "MMG", "ICC", "NR", "NC", "NG")
+##Aqui eu tenho que mudar algo? Adicionei as variáveis de qualidade e rodei tudo de novo. As novas imagens geradas coloquei no final "quali". 
+variaveis <- c("AP", "AC", "CP", "MC", "MG", "MMG", "ICC", "NR", "NC", "NG", "FT", "FLAVO", "PA")
 vals <- vcomp(df, variaveis)
 export(vals, "data/vcomp.xlsx")
 ```
@@ -154,92 +171,5 @@ ggsave("figs/boxplot_vcomp.jpg",
        height = 6)
 ```
 
-```{r}
-library(lme4)
 
-
-```
-
-
-## Distancia e Agrupamento
-
-```{r}
-
-dfmedias <- 
-  df |> 
-  group_by(TIPO, GEN) |> 
-  summarise(across(AP:ICC, \(x){mean(x, na.rm = TRUE)}),
-            .groups = "drop")
-
-dfdist <- 
-  dfmedias |> 
-  slice(1:2) |> 
-  select(GEN, AP:ICC)
-
-ggplot(dfdist, aes(AP, AC)) +
-  geom_point() +
-  geom_hline(yintercept = 26.25) +
-  geom_vline(xintercept = 67.25)
-
-# a2 = b2 + c2
-# a^2 = 100
-# a = raiz(100)
-
-mat <- dfdist |> column_to_rownames("GEN") |> as.matrix()
-mat[1, 1] <- 107
-# DISTANCIA DO G1 PARA G104 considerando AP e AC
-sqrt(sum((mat[1, ] - mat[2, ])^2))
-
-
-
-```
-
-
-# Distância euclidiana
-## Dourada
-```{r}
-mat <- 
-  dfmedias |> 
-  group_by(TIPO) |> 
-  nest()
-
-matd <- mat$data[[1]] |> column_to_rownames("GEN")
-ddourada <- clustering(matd)
-
-dend_dourada <- 
-  fviz_dend(ddourada$hc,
-            main = "",
-            type = "phylogenic",
-            k = 3)   +
-  ylim(-20, 600)
-
-```
-
-## Marrom
-```{r}
-matm <- mat$data[[2]] |> column_to_rownames("GEN")
-marrom <- clustering(matm)
-
-dend_marrom <- 
-  fviz_dend(marrom$hc,
-            main = "",
-            k = 3)  +
-  ylim(-20, 600)
-
-dend_dourada + dend_marrom +
-  plot_layout(widths = c(0.3, 0.7)) +
-  plot_annotation(tag_levels = "a", 
-                  tag_suffix = ")")
-# ggsave(
-#   "figs/dendrograma.jpg",
-#   width = 10,
-#   height = 5
-# )
-```
-
-
-# Section info
-```{r}
-sessionInfo()
-```
 

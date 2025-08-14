@@ -1,0 +1,63 @@
+---
+title: "04_agrupamento"
+format: html
+---
+
+
+## Distancia e Agrupamento
+
+```{r}
+
+dfgroup <- import("data/data_mgidi.xlsx")
+
+```
+
+
+# Distância euclidiana
+## Dourada
+```{r}
+mat <- 
+  dfgroup |> 
+  group_by(TIPO) |> 
+  nest()
+
+matd <- mat$data[[1]] |> column_to_rownames("GEN")
+ddourada <- clustering(matd, scale = TRUE)
+
+dend_dourada <- 
+  fviz_dend(ddourada$hc,
+            main = "",
+            k = 2)   +
+  geom_hline(yintercept = ddourada$cutpoint) +
+  ylim(-1, 7)
+
+```
+
+## Marrom
+```{r}
+matm <- mat$data[[2]] |> column_to_rownames("GEN")
+marrom <- clustering(matm, scale = TRUE)
+
+dend_marrom <- 
+  fviz_dend(marrom$hc,
+            main = "",
+            k = 3)  + 
+  geom_hline(yintercept = marrom$cutpoint) +
+  ylim(-1, 7)
+
+dend_dourada + dend_marrom +
+  plot_layout(widths = c(0.3, 0.7)) +
+  plot_annotation(tag_levels = "a", 
+                  tag_suffix = ")")
+# ggsave(
+#   "figs/dendrograma.jpg",
+#   width = 10,
+#   height = 5
+# )
+```
+
+
+# Section info
+```{r}
+sessionInfo()
+```
