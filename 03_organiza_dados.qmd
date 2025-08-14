@@ -1,0 +1,50 @@
+---
+title: "03_organiza_dados"
+format: html
+---
+
+# Criar médias por genótipo
+```{r}
+library(tidyverse)
+library(rio)
+dfgens <- 
+  import("data/dados_plantas.xlsx") |> 
+  mutate(CP = AP - AC) |> 
+  group_by(TIPO, GEN) |> 
+  summarise(across(AP:PA, \(x){mean(x, na.rm = TRUE)})) |> 
+  select(-AC)
+
+export(dfgens, "data/data_mgidi.xlsx")
+```
+
+
+# Arrumar os dados de qualidade
+```{r}
+
+# PÍVOT_LONGER
+# SEPARATE_WIDER_DELIM
+# PIVOT_WIDER
+dfquali <- 
+  import("data/qualidade.xlsx", sheet = "qualidade") %>% 
+  select(-Amostra)
+
+dflong <- 
+  dfquali %>%
+  pivot_longer(-GEN) %>% 
+  separate_wider_delim(name, delim = "_", names = c("TRAIT", "BLOCK")) %>% 
+  pivot_wider(names_from = TRAIT,
+              values_from = value) %>% 
+  group_by(GEN) %>% 
+  summarise(across(FT:PA, \(x){mean(x, na.rm = TRUE)}))
+# dfquali_medias
+
+```
+
+
+# Juntar com qualidade
+```{r}
+
+dfmgidi <- left_join(dfgens, dflong)
+export(dfmgidi, "data/data_mgidi.xlsx")
+```
+
