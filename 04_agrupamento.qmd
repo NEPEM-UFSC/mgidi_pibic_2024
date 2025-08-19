@@ -7,7 +7,15 @@ format: html
 ## Distancia e Agrupamento
 
 ```{r}
-
+library(rio)
+library(tidyverse)
+library(factoextra)
+library(metan)
+library(ggthemes)
+library(factoextra)
+library(FactoMineR)
+library(patchwork)
+library(AgroR)
 dfgroup <- import("data/data_mgidi.xlsx")
 
 ```

@@ -4,8 +4,7 @@
 
 
 
-# Pesquisadores {.unnumbered}
-
+# Pesquisadores {.unnumbered} (incluir uma pasta 'pesquisadores' dentro de figs, colocando fotos minha e tua)
 
 ```{r}
 #| echo: false

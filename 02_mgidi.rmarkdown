@@ -12,7 +12,11 @@ knitr::opts_chunk$set(cache = FALSE,
 ```
 
 
+
+
 # Pacotes
+
+
 
 ```{r warning=FALSE, message=FALSE}
 library(rio)
@@ -27,7 +31,11 @@ library(AgroR)
 ```
 
 
+
+
 # Média dos genótipos
+
+
 ```{r}
 dfgens <- 
   import("data/dados_plantas.xlsx") |> 
@@ -39,7 +47,11 @@ dfgens <-
 
 
 
+
+
 # Network de correlações
+
+
 ```{r}
 corr <- corr_coef(dfgens)
 plot(corr)
@@ -48,8 +60,12 @@ gc <- network_plot(corr)
 ```
 
 
+
+
 # MGIDI para seleção dos genótipos
 ## Sem pesos
+
+
 ```{r}
 ideotipo <- c("70, 30, h, h, h, h, h, h, h, h, h, h")
 # sem pesos
@@ -63,7 +79,11 @@ pmgidi_sp <- plot(mod_mgidi, SI = 25)
 pmgidi_sp_contrib <- plot(mod_mgidi, SI = 25, type = "contribution")
 ```
 
+
+
 ## Com pesos
+
+
 ```{r}
 mod_mgidi_pesos <- 
   mgidi(
@@ -87,7 +107,11 @@ ggsave("figs/mgidi.jpg",
 
 ```
 
+
+
 ## Gen comuns
+
+
 ```{r}
 gensp <- sel_gen(mod_mgidi)
 gencp <- sel_gen(mod_mgidi_pesos)
@@ -107,8 +131,8 @@ selected <-
         axis.title = element_blank(),
         axis.ticks.x = element_blank(),
         axis.ticks.y = element_blank()) + 
-  labs(x = NULL,
-       y = NULL)
+    labs(x = NULL,
+         y = NULL)
 
 # ggsave("figs/sel_gen_mgidi.jpg",
 #        width = 8,
@@ -116,7 +140,11 @@ selected <-
 
 ```
 
+
+
 # Ganhos de seleção
+
+
 ```{r}
 gcp <- get_model_data(mod_mgidi_pesos) |> mutate(peso = "Com peso")
 gsp <- get_model_data(mod_mgidi) |> mutate(peso = "Sem peso")
@@ -139,7 +167,11 @@ ggsave("figs/ganhos_mgidi.jpg",
 
 ```
 
+
+
 # Gráfico de médias
+
+
 ```{r}
 tipos <- import("data/tipos.xlsx")
 
@@ -151,8 +183,8 @@ dfggplot <-
   mutate(check = ifelse(GEN %in% "ST_PIONEIRA", "Check", "Genótipos NEPEM")) 
 
 
-plot_mg <- 
-  ggplot(dfggplot, aes(reorder(GEN, -MG), MG)) +
+
+ggplot(dfggplot, aes(reorder(GEN, -MG), MG)) +
   geom_col(aes(fill = check)) +
   facet_wrap(~TIPO, scale = "free_x") +
   theme_stata() +
@@ -163,32 +195,19 @@ plot_mg <-
        y = "",
        fill = "")
 
-plot_pa <- 
-  ggplot(dfggplot, aes(reorder(GEN, -PA), PA)) +
-  geom_col(aes(fill = check)) +
-  facet_wrap(~TIPO, scale = "free_x") +
-  theme_stata() +
-  theme(panel.grid.major.x = element_line()) +
-  geom_hline(yintercept = mean(dfggplot$PA), color = "red", linetype = 2) +
-  coord_radial(start = -(pi / 2), end = (pi / 2)) +
-  labs(x = "",
-       y = "",
-       fill = "")
-
-plot_mg / plot_pa +
-  plot_annotation(tag_levels = "a") +
-  plot_layout(guides = "collect") &
-  theme(legend.position = "bottom")
-
-ggsave("figs/velocimetro.jpg",
-       width = 14,
-       height = 9)
+# ggsave("figs/velocimetro.jpg",
+#        width = 16,
+#        height = 6)
 
 ```
 
 
 
+
+
 # Section info
+
+
 ```{r}
 sessionInfo()
 

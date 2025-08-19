@@ -36,7 +36,7 @@ df <-
   mutate(GEN = str_remove(GEN, "D|M"))
 
 box <- 
-ggplot(df, aes(MG, GEN, fill = TIPO)) +
+  ggplot(df, aes(MG, GEN, fill = TIPO)) +
   geom_boxplot() +
   scale_fill_manual(values = c("gold", "brown")) +
   theme_stata() +
@@ -45,24 +45,6 @@ ggplot(df, aes(MG, GEN, fill = TIPO)) +
   labs(x = "Massa de grãos por planta (g)",
        y = "Genótipo",
        fill = "")
-
-```
-
-
-
-```{r}
-#raiz
-x <- df$AP
-m <- mean(c(x))
-n <- length(x)
-
-d <- x - m
-d^2
-sum(d^2)/(n-1)
-
-#nutella
-var(x)
-
 
 ```
 
@@ -112,7 +94,7 @@ vcomp <- function(data,
 }
 
 ##Aqui eu tenho que mudar algo? Adicionei as variáveis de qualidade e rodei tudo de novo. As novas imagens geradas coloquei no final "quali". 
-variaveis <- c("AP", "AC", "CP", "MC", "MG", "MMG", "ICC", "NR", "NC", "NG", "FT", "FLAVO", "PA")
+variaveis <- c("AP", "AC", "CP", "MC", "MG", "MMG", "ICC", "NR", "NC", "NG")
 vals <- vcomp(df, variaveis)
 export(vals, "data/vcomp.xlsx")
 ```
@@ -134,10 +116,10 @@ df_vcomp <-
 dfh2 <- 
   vals |> 
   slice(5) |> 
-    pivot_longer(-parametro)
+  pivot_longer(-parametro)
 
 vcmp <-
-ggplot(df_vcomp, aes(name, value))+
+  ggplot(df_vcomp, aes(name, value))+
   geom_col(aes(fill = parametro), position = "fill",
            color = "black") +
   geom_point(data = dfh2,
@@ -161,15 +143,109 @@ ggplot(df_vcomp, aes(name, value))+
        y = "Proporção da variância fenotípica",
        fill = "")
 
-box + vcmp +
-    plot_layout(widths = c(0.6, 0.4)) +
-  plot_annotation(tag_levels = "a", 
-                  tag_suffix = ")")
 
-ggsave("figs/boxplot_vcomp.jpg",
-       width = 15,
-       height = 6)
+
 ```
 
 
+# Variância qualidade
+
+
+```{r}
+vcomp2 <- function(data,
+                   traits, 
+                   gen_col = "GEN",
+                   block_col = "BLOCK") {
+  
+  resultados <- lapply(traits, function(trait) {
+    dados_filtrados <- data[!is.na(data[[trait]]), ]
+    
+    formula_completa <- as.formula(paste(trait, "~ factor(", block_col, ") + (1|", gen_col, ")"))
+    modelo <- lmer(formula_completa, data = dados_filtrados, REML = TRUE)
+    vc <- as.data.frame(VarCorr(modelo))
+    var_gen <- vc[vc$grp == gen_col, "vcov"]
+    var_res <- vc[vc$grp == "Residual", "vcov"]
+    
+    n <- 3
+    H2 <- var_gen / (var_gen + (var_res / n))
+    
+    ran <- tryCatch({
+      ranova(modelo) |> as.data.frame() |> dplyr::select(Chisq = 4, p = 6) |> drop_na()
+    }, error = function(e) data.frame(Chisq = NA, p = NA))
+    
+    resultado <- data.frame(
+      parametro = c("var_gen", "var_res", "n_media", "H2", "LRT", "p_genotipo"),
+      valor = c(var_gen, var_res, n, H2, ran$Chisq[1], ran$p[1])
+    )
+    names(resultado)[2] <- trait
+    return(resultado)
+  })
+  
+  # Juntar os resultados por parâmetro
+  df_final <- 
+    resultados %>%
+    reduce(full_join, by = "parametro")
+  return(df_final)
+}
+
+
+variaveis <- c("FLAVO", "PA", "FT")
+vals2 <- vcomp2(dfquali, variaveis)
+export(vals2, "data/vcomp_quali.xlsx")
+
+
+
+df_vcomp2 <- 
+  vals2 |> 
+  slice(1:2) |>
+  pivot_longer(-parametro) |> 
+  mutate(
+    value = case_when(
+      parametro == "var_res" ~ value  / 3,
+      TRUE ~value
+    )
+  )
+
+dfh2 <- 
+  vals2 |> 
+  slice(4) |> 
+  pivot_longer(-parametro)
+
+vcmpquali <-
+  ggplot(df_vcomp2, aes(name, value))+
+  geom_col(aes(fill = parametro), position = "fill",
+           color = "black") +
+  geom_point(data = dfh2,
+             aes(y = value, x = name),
+             size = 3,
+             fill = "darkgreen",
+             shape = 23) +
+  theme_stata(base_size = 14) +
+  scale_y_continuous(expand = expansion(0)) +
+  scale_x_discrete(expand = expansion(0)) +
+  theme(axis.text.y = element_text(angle = 0)) +
+  scale_fill_manual(
+    values = c("var_gen" = "#F8766D", "var_planta" = "#00BA38", "var_res" = "#619CFF"),
+    labels = c(
+      "var_gen" = expression(sigma[g]^2),
+      "var_planta" = expression(sigma[g(p)]^2),
+      "var_res" = expression(sigma[e]^2)
+    )
+  ) +
+  labs(x = "Caracteres",
+       y = "Proporção da variância fenotípica",
+       fill = "")
+
+box + vcmp + vcmpquali +
+  plot_layout(widths = c(0.4, 0.4, 0.2)) +
+  plot_annotation(tag_levels = "a", 
+                  tag_suffix = ")")
+
+
+
+ggsave("figs/boxplot_vcomp.jpg",
+       width = 14,
+       height = 6)
+
+```
 
